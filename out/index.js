@@ -1,5 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tool_1 = require("./modules/tool");
-var a = tool_1.aa('abcdefgh', 'abde', 'd');
-console.log(a);
+var obj = {};
+var c = { a: 1, fn: function () { console.log('hello'); } };
+var arr = [c, c];
+tool_1.clone(obj, { a: c, b: arr });
+c.a = 2;
+console.log(obj, tool_1.get(obj, 'a.fn') === c.fn);
+var i = tool_1.get(obj, 'a.fn');
+i();

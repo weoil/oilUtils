@@ -42,6 +42,14 @@ function equals() {
     return true;
 }
 exports.equals = equals;
+/**
+ * 获取对象的值 如果没有则为null
+ *
+ * @export
+ * @param {*} obj
+ * @param {string} keys ‘xxx.xxx.xxx’
+ * @returns
+ */
 function get(obj, keys) {
     var keyArr = keys.split('.');
     for (var _i = 0, keyArr_1 = keyArr; _i < keyArr_1.length; _i++) {
@@ -93,35 +101,54 @@ function includes(source, str) {
     return false;
 }
 exports.includes = includes;
-function aa(parent) {
-    var child = [];
+function clone(obj) {
+    var sources = [];
     for (var _i = 1; _i < arguments.length; _i++) {
-        child[_i - 1] = arguments[_i];
+        sources[_i - 1] = arguments[_i];
     }
-    var pArr = parent.split('');
-    var childArrs = child.map(function (c) {
-        return {
-            os: '',
-            index: 0,
-            arr: c.split('')
-        };
-    });
-    var _loop_1 = function (i) {
-        childArrs.forEach(function (obj) {
-            if (i === obj.arr[obj.index]) {
-                obj.os += i;
-                obj.index++;
+    var caches = new Map();
+    sources.forEach(function (source) {
+        Object.keys(source).forEach(function (key) {
+            function copyObject(data) {
+                var val = {};
+                clone(val, data);
+                return val;
             }
+            function copyArray(arr) {
+                return arr.map(function (item) {
+                    return copy(item);
+                });
+            }
+            function copyFunction(fn) {
+                var fun = function () { };
+                Object.setPrototypeOf(fun, Object.getPrototypeOf(fn));
+                fn.call(fun);
+                return fun;
+            }
+            function copy(data) {
+                if (caches.has(data)) {
+                    return caches.get(data);
+                }
+                var val = data;
+                if (Array.isArray(data)) {
+                    val = copyArray(data);
+                }
+                else if (data instanceof Function) {
+                    val = copyFunction(data);
+                }
+                else if (data instanceof Date) {
+                    val = new Date(data);
+                }
+                else if (typeof data === 'object') {
+                    val = copyObject(data);
+                }
+                caches.set(data, val);
+                return val;
+            }
+            var val = source[key];
+            obj[key] = copy(val);
         });
-    };
-    for (var _a = 0, pArr_1 = pArr; _a < pArr_1.length; _a++) {
-        var i = pArr_1[_a];
-        _loop_1(i);
-    }
-    console.log(childArrs);
-    return childArrs.every(function (item, index) {
-        return item.os === child[index];
     });
-    // return os === child
+    caches.clear();
 }
-exports.aa = aa;
+exports.clone = clone;

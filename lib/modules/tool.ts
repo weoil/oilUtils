@@ -1,3 +1,5 @@
+import { type } from 'os'
+
 /**
  * 统计出现次数,为数组会深度遍历统计,为字符串使用正则进行匹配
  *
@@ -34,6 +36,14 @@ export function equals(...args: any[]) {
   }
   return true
 }
+/**
+ * 获取对象的值 如果没有则为null
+ *
+ * @export
+ * @param {*} obj
+ * @param {string} keys ‘xxx.xxx.xxx’
+ * @returns
+ */
 export function get(obj: any, keys: string) {
   const keyArr = keys.split('.')
   for (let key of keyArr) {
@@ -79,27 +89,47 @@ export function includes(source: string | any[], str: string) {
   }
   return false
 }
-
-export function aa(parent: string, ...child: string[]) {
-  const pArr = parent.split('')
-  let childArrs = child.map(c => {
-    return {
-      os: '',
-      index: 0,
-      arr: c.split('')
-    }
-  })
-  for (let i of pArr) {
-    childArrs.forEach(obj => {
-      if (i === obj.arr[obj.index]) {
-        obj.os += i
-        obj.index++
+type objImp = { [key: string]: any }
+export function clone(obj: objImp, ...sources: [objImp]): void {
+  const caches = new Map()
+  sources.forEach(source => {
+    Object.keys(source).forEach(key => {
+      function copyObject(data: objImp) {
+        const val = {}
+        clone(val, data)
+        return val
       }
+      function copyArray(arr: any[]): any[] {
+        return arr.map(item => {
+          return copy(item)
+        })
+      }
+      function copyFunction(fn: Function) {
+        const fun = function() {}
+        Object.setPrototypeOf(fun, Object.getPrototypeOf(fn))
+        fn.call(fun)
+        return fun
+      }
+      function copy(data: any) {
+        if (caches.has(data)) {
+          return caches.get(data)
+        }
+        let val = data
+        if (Array.isArray(data)) {
+          val = copyArray(data)
+        } else if (data instanceof Function) {
+          val = copyFunction(data)
+        } else if (data instanceof Date) {
+          val = new Date(data)
+        } else if (typeof data === 'object') {
+          val = copyObject(data)
+        }
+        caches.set(data, val)
+        return val
+      }
+      let val = source[key]
+      obj[key] = copy(val)
     })
-  }
-  console.log(childArrs)
-  return childArrs.every((item, index) => {
-    return item.os === child[index]
   })
-  // return os === child
+  caches.clear()
 }
